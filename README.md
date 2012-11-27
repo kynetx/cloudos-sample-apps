@@ -3,7 +3,12 @@ cloudos-sample-apps
 
 Sample CloudOS Applications
 
-a169x674 - Application Template
+a169x694 - Application Template (Redux)
+----------------------------------
+
+New and Improved myCloud application template. The original appTemplate required that a main page first be rendered before alternate pages within the application could be displayed. In this revision any page within the application can be rendered without the requirement to visit the main page.
+
+a169x674 - Application Template (deprecated)
 -------------------------------
 
 myCloud application template provides example of adding menu to an application and web form submission.

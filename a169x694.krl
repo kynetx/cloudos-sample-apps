@@ -11,10 +11,6 @@ ruleset a169x694 {
     use module a169x701 alias CloudRain
 	}
 
-	global {
-    thisRID = meta:rid();
-	}
-
   // ------------------------------------------------------------------------
 	rule appTemplate_Selected {
 		select when web cloudAppSelected
@@ -26,7 +22,7 @@ ruleset a169x694 {
 			];
 		}
 		{
-			CloudRain:createAppPanel(thisRID, "appTemplate", appMenu);
+			CloudRain:createPanel("appTemplate", appMenu);
 		}
 	}
 
@@ -40,7 +36,7 @@ ruleset a169x694 {
 			>>;
 		}
 		{
-			CloudRain:loadAppPanel(thisRID, appContent);
+			CloudRain:loadPanel(appContent);
 		}
 	}
 
@@ -53,8 +49,8 @@ ruleset a169x694 {
 			>>;
 		}
 		{
-			CloudRain:loadAppPanel(thisRID, appContent);
-			CloudRain:setAppTitle(thisRID, "See New Title");
+			CloudRain:loadPanel(appContent);
+			CloudRain:setTitle("See New Title");
 		}
 	}
 

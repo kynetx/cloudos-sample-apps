@@ -38,12 +38,13 @@ ruleset a41x193 {
 
     get_journal_entries = function(){
 
-      myEntries = ent:entries;
+      myEntries = ent:entries.reverse();
 
       entriesListMade = myEntries.map(
         function(entry) {
 
-          time = entry{"time"};
+          timeISO   = entry{"time"};
+          time      = time:strftime(timeISO, "%c");
           entryText = entry{"entry"};
           thumbnail = entry{"thumbnail"};
           image = entry{"image"};
@@ -74,7 +75,7 @@ ruleset a41x193 {
         entriesListEmpty;
 
       entriesGallery = <<
-        <legend>Journal Entries</legend>
+        <h3>Journal Entries</h3>
         <table class="table table-striped">
           <thead>
             <tr>
@@ -112,7 +113,7 @@ ruleset a41x193 {
         <form id="formAddJournalEntry" class="form-horizontal form-mycloud">
           <fieldset>
             <div class="wrapper squareTag">
-              <legend>Add Journal Entry</legend>
+              <h3>Add Journal Entry</h3>
             </div>
             <div class="control-group">
               <div class="controls">
@@ -139,7 +140,7 @@ ruleset a41x193 {
                 <input name="imageSource" id="imageSource" type="hidden"/>
               </div>
             </div>
-            <div class="form-actions" style="margin-bottom: 50px;">
+            <div class="form-actions">
               <button type="submit" class="btn btn-primary">Save Entry</button>
             </div>
           </fieldset>
@@ -220,29 +221,22 @@ ruleset a41x193 {
         with object_type = imageType;
       AWSS3:upload(S3Bucket, imageName, imageValue)
         with object_type = imageType;
+      emit <<
+        console.log("NEW ENTRY");
+      >>;
     }
     always {
       set ent:entries entries if
-        ((imageSource && thumbnailSource) || entry);
+        ((imageSource && thumbnailSource) || entryText);
     }
   }
 
-  rule saveEntry {
-    select when web submit "#formAddJournalEntry$"
-    pre {
-      entryText = event:attr("entryText");
-
-      timeNow = time:now({"tz": "America/Denver"});
-
-      entryData = {
-        "entry": entryText,
-        "time": timeNow
-      };
-
-      entries = (ent:entries || []).append(entryData);
-    }
+  rule TestPost {
+    select when web submit "#formAddJournalEntry.post"
     {
-      noop();
+      emit <<
+        console.log("Testing the post!");
+      >>;
     }
   }
 
@@ -254,6 +248,7 @@ ruleset a41x193 {
     {
       emit <<
         $K("#journalEntries").html(journalEntries);
+        $K("#formAddJournalEntry")[0].reset();
       >>;
       CloudRain:hideSpinner();
     }

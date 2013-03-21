@@ -48,7 +48,12 @@ ruleset a41x193 {
           entryText = entry{"entry"};
           thumbnail = entry{"thumbnail"};
           image = entry{"image"};
-          imageLink = (image && image neq "none") => '<a href="#{image}"><img src="#{thumbnail}" /></a>' | "None";
+          imageHTML = <<
+					  <a href="#{image}" class="fancybox" rel="JournalGallery" data-fancybox-type="image">
+              <img src="#{thumbnail}" />
+            </a>
+          >>;
+          imageLink = (image && image neq "none") => imageHTML | "None";
 
           thisEntry = <<
             <tr>
@@ -181,6 +186,7 @@ ruleset a41x193 {
             }
           });
         }); 
+        $K('.fancybox').fancybox();
       >>;
     }
   }
@@ -231,15 +237,6 @@ ruleset a41x193 {
     }
   }
 
-  rule TestPost {
-    select when web submit "#formAddJournalEntry.post"
-    {
-      emit <<
-        console.log("Testing the post!");
-      >>;
-    }
-  }
-
   rule showEntries {
     select when web submit "#formAddJournalEntry$"
     pre {
@@ -249,6 +246,7 @@ ruleset a41x193 {
       emit <<
         $K("#journalEntries").html(journalEntries);
         $K("#formAddJournalEntry")[0].reset();
+        $K('.fancybox').fancybox();
       >>;
       CloudRain:hideSpinner();
     }

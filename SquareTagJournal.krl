@@ -49,7 +49,7 @@ ruleset a41x193 {
           thumbnail = entry{"thumbnail"};
           image = entry{"image"};
           imageHTML = <<
-					  <a href="#{image}" class="fancybox" rel="JournalGallery" data-fancybox-type="image">
+            <a href="#{image}" class="fancybox" rel="JournalGallery" data-fancybox-type="image">
               <img src="#{thumbnail}" />
             </a>
           >>;
@@ -80,7 +80,6 @@ ruleset a41x193 {
         entriesListEmpty;
 
       entriesGallery = <<
-        <h3>Journal Entries</h3>
         <table class="table table-striped">
           <thead>
             <tr>
@@ -113,13 +112,10 @@ ruleset a41x193 {
 
       journalEntries = get_journal_entries();
 
-      html = <<
+      formHTML = <<
         #{defaultAppHtml}
         <form id="formAddJournalEntry" class="form-horizontal form-mycloud">
           <fieldset>
-            <div class="wrapper squareTag">
-              <h3>Add Journal Entry</h3>
-            </div>
             <div class="control-group">
               <div class="controls">
                 <div class="thumbnail-wrapper" style="width: 100px;">
@@ -150,9 +146,33 @@ ruleset a41x193 {
             </div>
           </fieldset>
         </form>
+      >>;
 
-        <div class="wrapper squareTag" id="journalEntries">
-          #{journalEntries}
+      entries = ent:entries;
+
+      html = <<
+        <div class="squareTag wrapper">
+          #{defaultAppHtml}
+          <ul id="myTab" class="nav nav-tabs">
+            <li class="active"><a href="#entryNewTab" data-toggle="tab">New Entry</a></li>
+            <li class="">
+              <a href="#entryTableTab" data-toggle="tab">
+                Journal Entries
+                <span class="badge">#{entries.length()}</span>
+              </a>
+            </li>
+          </ul>
+          <div class="tab-content" id="entryTabContent">
+            <div class="tab-pane fade active in" id="entryNewTab">
+              #{formHTML}
+            </div>
+
+            <div class="tab-pane fade" id="entryTableTab">
+              <div id="journalEntries" class="wrapper squareTag">
+                #{journalEntries}
+              </div>
+            </div>
+          </div>
         </div>
       >>;
 
@@ -227,9 +247,6 @@ ruleset a41x193 {
         with object_type = imageType;
       AWSS3:upload(S3Bucket, imageName, imageValue)
         with object_type = imageType;
-      emit <<
-        console.log("NEW ENTRY");
-      >>;
     }
     always {
       set ent:entries entries if
@@ -246,6 +263,9 @@ ruleset a41x193 {
       emit <<
         $K("#journalEntries").html(journalEntries);
         $K("#formAddJournalEntry")[0].reset();
+
+        $K('a[href="#entryTableTab"]').tab('show');
+
         $K('.fancybox').fancybox();
       >>;
       CloudRain:hideSpinner();
@@ -264,16 +284,31 @@ ruleset a41x193 {
 
   rule makeDefault {
     select when web cloudAppAction action re/makeDefault/
+    pre {
+      backChannel = event:attr("backChannel");
+
+      relationship = SquareTag:getRelationship(backChannel);
+
+      defaultOtherApps = (pds:get_item("SquareTag", "defaultApps") || {});
+      newDefaultOtherApps = (backChannel) =>
+        defaultOtherApps.put([backChannel], thisRID) | defaultOtherApps;
+    }
     {
       replace_html("#makeDefaultSquareTagApp", "");
       CloudRain:hideSpinner();
     }
     fired {
+      raise pds event new_data_available
+        with _api = "sky"
+        and namespace = "SquareTag"
+        and keyvalue = "defaultApps"
+        and value = newDefaultOtherApps if (relationship && relationship{"relationship"} neq "slave");
+
       raise pds event new_settings_attribute
         with _api = "sky"
         and setRID = SquareTagRID
         and setAttr = "defaultOwnerApp"
-        and setValue = thisRID;
+        and setValue = thisRID if (relationship{"relationship"} eq "slave");
     }
   }
 }
